@@ -2,7 +2,7 @@
 
 Semesterprosjekt i emnet **52TE01I – Måle- og reguleringsteknikk** (10 studiepoeng) ved Fagskolen Rogaland, linje Automatisering.
 
-Prosjektet utvikler og analyserer en matematisk modell av en gass-gjennomstrømningsvarmer for utendørs dusj, og sammenligner P-, PI-, PD- og PID-regulering i MATLAB/Simulink og Python.
+Prosjektet utvikler og analyserer en matematisk modell av en gass-gjennomstrømningsvarmer for utendørs dusj, og sammenligner P-, PI-, PD- og PID-regulering i MATLAB/Simulink.
 
 ## Innhold
 
@@ -11,7 +11,8 @@ Prosjektet utvikler og analyserer en matematisk modell av en gass-gjennomstrømn
 - [System og modell](#system-og-modell)
 - [Mappestruktur](#mappestruktur)
 - [Forutsetninger](#forutsetninger)
-- [Slik kjører du simuleringene](#slik-kjører-du-simuleringene)
+- [Slik kjører du simuleringen](#slik-kjører-du-simuleringen)
+- [Regulatorparametere](#regulatorparametere)
 - [Resultater](#resultater)
 - [Forfattere](#forfattere)
 - [Veileder](#veileder)
@@ -19,7 +20,7 @@ Prosjektet utvikler og analyserer en matematisk modell av en gass-gjennomstrømn
 
 ## Bakgrunn
 
-Prosjektets opprinnelige mål var å bygge en komplett temperaturregulator basert på mikrokontroller (ESP32-C3). På grunn av frafall av et gruppemedlem ble omfanget justert til modellering, simulering og analyse av temperaturregulering i MATLAB/Simulink og Python.
+Prosjektets opprinnelige mål var å bygge en komplett temperaturregulator basert på mikrokontroller (ESP32-C3). På grunn av frafall av et gruppemedlem ble omfanget justert til modellering, simulering og analyse av temperaturregulering i MATLAB/Simulink.
 
 ## Problemstilling
 
@@ -40,6 +41,8 @@ Prosessen er en gass-gjennomstrømningsvarmer (32 kW, maks 16 L/min) for utendø
 C · dT/dt = η · P − Q_tap + mdot · cp · (Tin − T)
 ```
 
+Energibalansen er implementert som en `MATLAB Function`-blokk (`HeaterODE`) inne i Simulink-modellen. PID-regulatoren, summasjonspunkt, forstyrrelser og scope-blokker er plassert på toppnivå i samme `.slx`-fil.
+
 **Parameterverdier brukt i modellen:**
 
 | Parameter | Symbol | Verdi | Enhet |
@@ -57,41 +60,30 @@ C · dT/dt = η · P − Q_tap + mdot · cp · (Tin − T)
 
 ```
 .
-├── README.md                       # Dette dokumentet
+├── README.md                                 # Dette dokumentet
+├── gjennomstromningsvarmer.slx               # Simulink-modell med HeaterODE, PID og forstyrrelser
 ├── rapport/
 │   └── Rapport_Gjennomstromningsvarmer.docx
-├── simulink/
-│   ├── heater_model.slx            # Simulink-modell (hoved)
-│   ├── HeaterODE.m                 # MATLAB Function-blokk (energibalanse)
-│   └── run_simulation.m            # Kjøreskript med parametersett
-├── python/
-│   ├── heater_sim.py               # Python-implementasjon av modellen
-│   ├── pid.py                      # PID-regulator med anti-windup
-│   ├── plots.py                    # Plotting av sprangrespons og forstyrrelse
-│   └── requirements.txt
-├── figurer/                        # Genererte plott brukt i rapporten
-└── vedlegg/
-    ├── forprosjektrapport.pdf
-    └── statusrapporter/
+├── presentasjon/
+│   └── presentasjon_Gjennomstromningsvarmer.pptx
 ```
 
-> Juster stinavn etter ditt faktiske oppsett før du pusher.
+> Juster filnavn etter ditt faktiske oppsett før du pusher.
 
 ## Forutsetninger
 
-**MATLAB/Simulink:**
 - MATLAB R2023a eller nyere
 - Simulink
-- Control System Toolbox (for PID Controller-blokken)
+- Control System Toolbox (for `PID Controller`-blokken)
 
-## Slik kjører du simuleringene
+## Slik kjører du simuleringen
 
-**MATLAB/Simulink:**
+1. Åpne `gjennomstromningsvarmer.slx` i MATLAB.
+2. Verifiser at PID-blokken har parametersettet du vil teste (se tabell under).
+3. Trykk **Run** i Simulink-verktøylinjen.
+4. Temperaturrespons, pådrag og feil vises i Scope-blokkene.
 
-```matlab
-cd simulink
-run_simulation
-```
+For å veksle mellom P-, PI-, PD- og PID-modus endres Kp-, Ki- og Kd-verdiene direkte i PID-blokken.
 
 ## Regulatorparametere
 
@@ -99,10 +91,10 @@ Verdier valgt gjennom manuell tuning etter metoden i pensum [1, kap. 1.4.5]:
 
 | Regulator | Kp | Ki | Kd | N (derivatfilter) |
 |---|---|---|---|---|
-| P | 0,3 | 0 | 0 | – |
-| PI | 0,3 | 0,1 | 0 | – |
-| PD | 0,3 | 0 | 0,2 | 100 |
-| PID | 0,3 | 0,1 | 0,2 | 100 |
+| P | 0,03 | 0 | 0 | – |
+| PI | 0,03 | 0,03 | 0 | – |
+| PD | 0,03 | 0 | -0,002 | 2 |
+| PID | 0,03 | 0,03 | -0,002 | 2 |
 
 Anti-windup: clamping med utgangsbegrensning [0, 1].
 
@@ -112,15 +104,15 @@ Sprangrespons ved SP = 40 °C, Tin = 10 °C, q = 8 L/min:
 
 | Regulator | Stasjonærfeil [°C] | Overshoot [°C] | Innsvingingstid [s] |
 |---|---|---|---|
-| P | 1,87 | 0 | Aldri (permanent) |
-| PI | 0 | 4,7 | 14 |
-| PD | 2 | 0 | Aldri (permanent) |
-| PID | 0 | 3,8 | 14 |
+| P | 12,3 | Ingen | Permanent avvik |
+| PI | 0 | 1,9 | 4 |
+| PD | 12,3 | Ingen | Permanent avvik |
+| PID | 0 | 1,9 | 4 |
 
 **Hovedfunn:**
-- Kun regulatorer med I-ledd (PI og PID) oppnår null stasjonærfeil.
-- PID gir lavere overshoot enn PI fordi D-leddet demper stigningen nær settpunktet.
-- Forstyrrelse (q: 8 → 12 L/min) kompenseres av PI/PID innen ca. 7 sekunder; P og PD får varig avvik.
+- Kun regulatorer med I-ledd (PI og PID) oppnår null stasjonærfeil. P og PD stabiliserer seg rundt 27,7 °C — pådraget u = Kp · e = 0,03 × 12,3 ≈ 37 % er akkurat nok til å holde likevekt, men ikke nok til å nå settpunktet.
+- PI gir raskest innsvinging i dette tilfellet (≈ 4 s, overshoot 1,9 °C). PID gir samme ytelse her, men er mer robust mot forstyrrelser og endringer i prosessdynamikken.
+- Forstyrrelse (q: 8 → 12 L/min ved t = 15 s) kompenseres av PI/PID innen ca. 6 sekunder. P og PD får et varig nytt avvik — stasjonærfeilen øker fra ca. 12,3 °C til ca. 15,2 °C.
 - Ved uoppnåelig settpunkt (SP = 60 °C, q = 16 L/min, Tin = 5 °C) kreves ~61 kW, mens tilgjengelig effekt er ~27 kW. Uten anti-windup bygger integralleddet seg opp ubegrenset; med clamping responderer regulatoren umiddelbart når belastningen synker.
 
 ## Forfattere
